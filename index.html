@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Tua Galleria Privata</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f9; color: #333; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        img { width: 100%; border-radius: 8px; margin-bottom: 15px; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <h1 id="titolo-pagina">Caricamento galleria in corso...</h1>
+    <div class="grid" id="gallery"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const supabaseUrl = 'https://wcahdmfvbgknicubmwxx.supabase.co';
+        const supabaseKey = 'sb_publishable_zJhThF1H_WtPLHCgH8Y26w_RXs0BVwG';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // FUNZIONE PER FORZARE IL DOWNLOAD
+        async function downloadImage(url, filename) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename || 'foto.jpg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error("Errore durante il download:", error);
+                window.open(url, '_blank');
+            }
+        }
+
+        window.forceDownload = downloadImage;
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const folderId = params.get('cartella');
+
+            if (!folderId) {
+                document.getElementById('titolo-pagina').innerText = "Inquadra un QR code valido per vedere le foto.";
+                return;
+            }
+
+            const { data: foto, error } = await supabase
+                .from('foto')
+                .select('*')
+                .eq('id_cartella', folderId);
+
+            if (error || foto.length === 0) {
+                document.getElementById('titolo-pagina').innerText = "Questa galleria è vuota o non esiste.";
+                return;
+            }
+
+            document.getElementById('titolo-pagina').innerText = "Le tue foto sono pronte!";
+            const container = document.getElementById('gallery');
+            
+            foto.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${f.url_originale}" alt="${f.titolo}">
+                    <button onclick="forceDownload('${f.url_originale}', '${f.titolo}')">Scarica Foto</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+        init();
+    </script>
+</body>
+</html>
