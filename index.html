@@ -19,12 +19,22 @@
     <div class="grid" id="gallery"></div>
 
     <script type="module">
-        // Rimossa dipendenza da Supabase, ora usa R2 direttamente
-
-        // FUNZIONE PER FORZARE IL DOWNLOAD
+        // FUNZIONE PER FORZARE IL DOWNLOAD DEFINITIVA
         async function downloadImage(url, filename) {
             try {
-                const response = await fetch(url);
+                // TRUCCO: Aggiungiamo un parametro finto all'URL. 
+                // Questo costringe il browser a scaricare un file pulito coi permessi CORS corretti, ignorando la cache.
+                const urlPulito = url + "?dl=1";
+
+                const response = await fetch(urlPulito, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
                 const blob = await response.blob();
                 const blobUrl = window.URL.createObjectURL(blob);
                 
@@ -33,10 +43,16 @@
                 link.download = filename || 'foto.jpg';
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(blobUrl);
+                
+                // Pulizia della memoria
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 100);
+
             } catch (error) {
-                console.error("Errore durante il download:", error);
+                console.error("Errore durante il download forzato:", error);
+                // Ultima spiaggia solo se cade la connessione
                 window.open(url, '_blank');
             }
         }
@@ -55,7 +71,6 @@
             }
 
             try {
-                // Fetch del manifest.json da R2
                 const manifestUrl = `https://pub-5d37a62c4e3241d78beb24c69df020b1.r2.dev/${folderId}/manifest.json`;
                 const response = await fetch(manifestUrl);
                 
@@ -78,7 +93,7 @@
                     const card = document.createElement('div');
                     card.className = 'card';
                     card.innerHTML = `
-                        <img src="${f.url}" alt="${f.nome}">
+                        <img src="${f.url}" crossorigin="anonymous" alt="${f.nome}">
                         <button onclick="forceDownload('${f.url}', '${f.nome}')">Scarica Foto</button>
                     `;
                     container.appendChild(card);
