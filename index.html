@@ -19,11 +19,7 @@
     <div class="grid" id="gallery"></div>
 
     <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-        const supabaseUrl = 'https://wcahdmfvbgknicubmwxx.supabase.co';
-        const supabaseKey = 'sb_publishable_zJhThF1H_WtPLHCgH8Y26w_RXs0BVwG';
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // Rimossa dipendenza da Supabase, ora usa R2 direttamente
 
         // FUNZIONE PER FORZARE IL DOWNLOAD
         async function downloadImage(url, filename) {
@@ -49,35 +45,48 @@
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
-            const folderId = params.get('cartella');
+            const queryFolderId = params.get('cartella');
+            const pathParts = window.location.pathname.split('/').filter(p => p && p !== 'index.html' && p !== '404.html');
+            const folderId = queryFolderId || pathParts[pathParts.length - 1];
 
             if (!folderId) {
                 document.getElementById('titolo-pagina').innerText = "Inquadra un QR code valido per vedere le foto.";
                 return;
             }
 
-            const { data: foto, error } = await supabase
-                .from('foto')
-                .select('*')
-                .eq('id_cartella', folderId);
+            try {
+                // Fetch del manifest.json da R2
+                const manifestUrl = `https://pub-5d37a62c4e3241d78beb24c69df020b1.r2.dev/${folderId}/manifest.json`;
+                const response = await fetch(manifestUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Manifest non trovato');
+                }
+                
+                const manifest = await response.json();
+                const foto = manifest.foto;
 
-            if (error || foto.length === 0) {
+                if (!foto || foto.length === 0) {
+                    document.getElementById('titolo-pagina').innerText = "Questa galleria è vuota o non esiste.";
+                    return;
+                }
+
+                document.getElementById('titolo-pagina').innerText = "Le tue foto sono pronte!";
+                const container = document.getElementById('gallery');
+                
+                foto.forEach(f => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <img src="${f.url}" alt="${f.nome}">
+                        <button onclick="forceDownload('${f.url}', '${f.nome}')">Scarica Foto</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Errore nel caricamento della galleria:", error);
                 document.getElementById('titolo-pagina').innerText = "Questa galleria è vuota o non esiste.";
-                return;
             }
-
-            document.getElementById('titolo-pagina').innerText = "Le tue foto sono pronte!";
-            const container = document.getElementById('gallery');
-            
-            foto.forEach(f => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <img src="${f.url_originale}" alt="${f.titolo}">
-                    <button onclick="forceDownload('${f.url_originale}', '${f.titolo}')">Scarica Foto</button>
-                `;
-                container.appendChild(card);
-            });
         }
         init();
     </script>
