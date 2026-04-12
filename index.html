@@ -22,8 +22,8 @@
         // FUNZIONE PER FORZARE IL DOWNLOAD DEFINITIVA
         async function downloadImage(url, filename) {
             try {
-                // TRUCCO: Aggiungiamo un parametro finto all'URL. 
-                // Questo costringe il browser a scaricare un file pulito coi permessi CORS corretti, ignorando la cache.
+                // TRUCCO: Aggiungiamo un parametro finto all'URL per aggirare la cache. 
+                // Questo costringe il browser a scaricare un file pulito coi permessi CORS.
                 const urlPulito = url + "?dl=1";
 
                 const response = await fetch(urlPulito, {
@@ -93,7 +93,7 @@
                     const card = document.createElement('div');
                     card.className = 'card';
                     card.innerHTML = `
-                        <img src="${f.url}" crossorigin="anonymous" alt="${f.nome}">
+                        <img src="${f.url}" alt="${f.nome}">
                         <button onclick="forceDownload('${f.url}', '${f.nome}')">Scarica Foto</button>
                     `;
                     container.appendChild(card);
