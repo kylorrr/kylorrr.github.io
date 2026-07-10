@@ -2,7 +2,6 @@ import './style.css';
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// Simple smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -15,7 +14,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// Scroll Reveal Logic
 const observerOptions = {
   root: null,
   rootMargin: '0px',
