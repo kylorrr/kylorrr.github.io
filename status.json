@@ -1,31 +1,26 @@
 {
-  "updated_at": "2026-07-16T13:40:11.178Z",
+  "updated_at": "2026-07-16T13:51:08.350Z",
   "overall": "degraded",
   "firmwares": [
     {
       "name": "ELYRA SLOT",
-      "status": "ud",
-      "games": "All Anti-Cheats (VGK / EAC / BE / FaceIT / Ricochet)"
+      "status": "ud"
     },
     {
       "name": "ELYRA PRIVATE",
-      "status": "ud",
-      "games": "VGK / EAC / BE / FaceIT"
+      "status": "ud"
     },
     {
       "name": "ELYRA RDMA",
-      "status": "ud",
-      "games": "All Anti-Cheats â Full IOMMU Bypass"
+      "status": "updating"
     },
     {
       "name": "ELYRA EAC",
-      "status": "ud",
-      "games": "EAC â Rust / Apex Legends / Fortnite / R6 / Tarkov"
+      "status": "ud"
     },
     {
       "name": "ELYRA VGK",
-      "status": "risky",
-      "games": "VGK â Valorant (Intel Only)"
+      "status": "ud"
     }
   ],
   "footer_note": "Join discord.gg/elyradma to purchase"
