@@ -1,11 +1,26 @@
 {
-  "updated_at": "2026-07-16T12:00:00Z",
-  "overall": "operational",
+  "updated_at": "2026-07-16T14:12:21.747Z",
+  "overall": "incident",
   "firmwares": [
-    { "name": "ELYRA SLOT",    "status": "ud" },
-    { "name": "ELYRA PRIVATE", "status": "ud" },
-    { "name": "ELYRA RDMA",    "status": "ud" },
-    { "name": "ELYRA EAC",     "status": "ud" },
-    { "name": "ELYRA VGK",     "status": "ud" }
+    {
+      "name": "ELYRA SLOT",
+      "status": "detected"
+    },
+    {
+      "name": "ELYRA PRIVATE",
+      "status": "ud"
+    },
+    {
+      "name": "ELYRA RDMA",
+      "status": "ud"
+    },
+    {
+      "name": "ELYRA EAC",
+      "status": "ud"
+    },
+    {
+      "name": "ELYRA VGK",
+      "status": "ud"
+    }
   ]
 }
