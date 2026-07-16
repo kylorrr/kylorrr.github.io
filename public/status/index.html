@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elyra DMA — Firmware Status</title>
+  <meta name="description" content="Real-time firmware status for Elyra DMA products." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #00ff88;
+      --green-dim:  #00cc6a;
+      --green-glow: rgba(0, 255, 136, 0.15);
+      --red:        #ff4560;
+      --red-glow:   rgba(255, 69, 96, 0.15);
+      --yellow:     #ffc107;
+      --yellow-glow:rgba(255, 193, 7, 0.15);
+      --blue:       #4299e1;
+      --blue-glow:  rgba(66, 153, 225, 0.15);
+      --bg:         #060a0f;
+      --bg2:        #0c1219;
+      --surface:    rgba(255,255,255,0.04);
+      --surface2:   rgba(255,255,255,0.07);
+      --border:     rgba(255,255,255,0.07);
+      --text:       #e2e8f0;
+      --muted:      #64748b;
+      --radius:     14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── BACKGROUND GRID ─────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOW ORBS ───────────────────────────────── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.25;
+    }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #00ff88, transparent); top: -200px; left: -200px; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #4299e1, transparent); bottom: -100px; right: -100px; }
+
+    /* ── LAYOUT ──────────────────────────────────── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* ── HEADER ──────────────────────────────────── */
+    header {
+      padding: 3rem 0 2.5rem;
+      text-align: center;
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.75rem, 5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── OVERALL BANNER ──────────────────────────── */
+    .overall-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1rem 1.75rem;
+      border-radius: var(--radius);
+      border: 1px solid;
+      margin: 1.5rem 0 2.5rem;
+      font-weight: 600;
+      font-size: 1.05rem;
+      transition: all 0.4s ease;
+    }
+
+    .overall-banner.operational {
+      background: var(--green-glow);
+      border-color: rgba(0,255,136,0.25);
+      color: var(--green);
+    }
+    .overall-banner.degraded {
+      background: var(--yellow-glow);
+      border-color: rgba(255,193,7,0.25);
+      color: var(--yellow);
+    }
+    .overall-banner.outage {
+      background: var(--red-glow);
+      border-color: rgba(255,69,96,0.25);
+      color: var(--red);
+    }
+
+    /* ── PULSE RING ──────────────────────────────── */
+    .pulse-wrap {
+      position: relative;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    .pulse-ring {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      position: absolute;
+      animation: pulse-ring 2s ease-out infinite;
+      opacity: 0;
+    }
+
+    .operational .pulse-dot,
+    .operational .pulse-ring { background: var(--green); }
+    .degraded .pulse-dot,
+    .degraded .pulse-ring    { background: var(--yellow); }
+    .outage .pulse-dot,
+    .outage .pulse-ring      { background: var(--red); }
+
+    @keyframes pulse-ring {
+      0%   { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* ── CARD ────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .refresh-info {
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .refresh-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    /* ── FIRMWARE ROW ────────────────────────────── */
+    .fw-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s ease;
+    }
+
+    .fw-row:last-child { border-bottom: none; }
+    .fw-row:hover { background: var(--surface2); }
+
+    .fw-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── STATUS BADGE ────────────────────────────── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid;
+      transition: all 0.3s ease;
+    }
+
+    .status-badge .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ud */
+    .badge-ud {
+      background: var(--green-glow);
+      border-color: rgba(0,255,136,0.3);
+      color: var(--green);
+    }
+    .badge-ud .badge-dot { background: var(--green); animation: pulse-ring 2s infinite; }
+
+    /* blocked */
+    .badge-blocked {
+      background: var(--yellow-glow);
+      border-color: rgba(255,193,7,0.3);
+      color: var(--yellow);
+    }
+    .badge-blocked .badge-dot { background: var(--yellow); }
+
+    /* detected */
+    .badge-detected {
+      background: var(--red-glow);
+      border-color: rgba(255,69,96,0.3);
+      color: var(--red);
+    }
+    .badge-detected .badge-dot { background: var(--red); animation: flicker 1.2s ease-in-out infinite; }
+
+    /* updating */
+    .badge-updating {
+      background: var(--blue-glow);
+      border-color: rgba(66,153,225,0.3);
+      color: var(--blue);
+    }
+    .badge-updating .badge-dot { background: var(--blue); animation: spin-dot 1.2s linear infinite; }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+    @keyframes spin-dot {
+      0%   { box-shadow: 0 0 0 0 rgba(66,153,225,0.6); }
+      100% { box-shadow: 0 0 0 5px transparent; }
+    }
+
+    /* ── FOOTER ──────────────────────────────────── */
+    .last-updated {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .footer-links a {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--green); }
+
+    /* ── SKELETON LOADER ─────────────────────────── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 1em;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .fw-row-skeleton {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 480px) {
+      .fw-name { font-size: 0.85rem; }
+      .status-badge { font-size: 0.72rem; padding: 0.25rem 0.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrapper">
+
+  <header>
+    <div class="logo-text">⚡ Elyra DMA</div>
+    <h1>System Status</h1>
+    <p>Live firmware detection status — updated automatically</p>
+  </header>
+
+  <!-- Overall Banner -->
+  <div class="overall-banner operational" id="overall-banner">
+    <div class="pulse-wrap">
+      <div class="pulse-ring"></div>
+      <div class="pulse-dot"></div>
+    </div>
+    <span id="overall-text">All Systems Operational</span>
+  </div>
+
+  <!-- Firmware list card -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Firmware Modules</span>
+      <div class="refresh-info">
+        <div class="refresh-dot"></div>
+        <span>Live</span>
+      </div>
+    </div>
+    <div id="fw-list">
+      <!-- Skeleton rows -->
+      <div class="fw-row-skeleton">
+        <div class="skeleton" style="width:140px"></div>
+        <div class="skeleton" style="width:90px"></div>
+      </div>
+      <div class="fw-row-skeleton">
+        <div class="skeleton" style="width:160px"></div>
+        <div class="skeleton" style="width:90px"></div>
+      </div>
+      <div class="fw-row-skeleton">
+        <div class="skeleton" style="width:120px"></div>
+        <div class="skeleton" style="width:90px"></div>
+      </div>
+      <div class="fw-row-skeleton">
+        <div class="skeleton" style="width:145px"></div>
+        <div class="skeleton" style="width:90px"></div>
+      </div>
+      <div class="fw-row-skeleton" style="border-bottom:none">
+        <div class="skeleton" style="width:130px"></div>
+        <div class="skeleton" style="width:90px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Last updated -->
+  <div class="last-updated" id="last-updated">
+    <span>⏱</span>
+    <span>Fetching data...</span>
+  </div>
+
+  <div class="footer-links">
+    <a href="https://discord.gg/elyradma" target="_blank">Join Discord</a>
+    <a href="https://kylorrr.github.io" target="_blank">Homepage</a>
+  </div>
+
+</div>
+
+<script>
+  const STATUS_API = '/status.json';
+  const POLL_INTERVAL = 5000;
+
+  const BADGE = {
+    ud:       { cls: 'badge-ud',       label: 'Undetected'  },
+    blocked:  { cls: 'badge-blocked',  label: 'Blocked'     },
+    detected: { cls: 'badge-detected', label: 'Detected'    },
+    updating: { cls: 'badge-updating', label: 'Updating'    },
+  };
+
+  const OVERALL = {
+    operational: { cls: 'operational', text: 'All Systems Operational' },
+    degraded:    { cls: 'degraded',    text: 'Partial Issues Detected'  },
+    outage:      { cls: 'outage',      text: 'Critical Outage Detected' },
+  };
+
+  function computeOverall(firmwares) {
+    const hasDetected = firmwares.some(f => f.status === 'detected');
+    const hasIssue    = firmwares.some(f => f.status === 'blocked' || f.status === 'updating');
+    if (hasDetected) return 'outage';
+    if (hasIssue)    return 'degraded';
+    return 'operational';
+  }
+
+  function renderBadge(status) {
+    const s = BADGE[status] || { cls: 'badge-blocked', label: status };
+    return `<span class="status-badge ${s.cls}">
+      <span class="badge-dot"></span>
+      ${s.label}
+    </span>`;
+  }
+
+  function renderRows(firmwares) {
+    return firmwares.map(fw => `
+      <div class="fw-row">
+        <span class="fw-name">${escHtml(fw.name)}</span>
+        ${renderBadge(fw.status)}
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatTime(isoStr) {
+    try {
+      return new Date(isoStr).toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'UTC', timeZoneName: 'short',
+      });
+    } catch { return isoStr; }
+  }
+
+  async function fetchStatus() {
+    try {
+      const res = await fetch(STATUS_API + '?t=' + Date.now());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      // Render firmwares
+      document.getElementById('fw-list').innerHTML = renderRows(data.firmwares);
+
+      // Overall banner
+      const overall = computeOverall(data.firmwares);
+      const banner  = document.getElementById('overall-banner');
+      const ov      = OVERALL[overall] || OVERALL.operational;
+      banner.className = `overall-banner ${ov.cls}`;
+      document.getElementById('overall-text').textContent = ov.text;
+
+      // Update pulse children inherit color via CSS
+      const dot  = banner.querySelector('.pulse-dot');
+      const ring = banner.querySelector('.pulse-ring');
+
+      // Last updated
+      const ts = data.updated_at ? formatTime(data.updated_at) : '—';
+      document.getElementById('last-updated').innerHTML =
+        `<span>⏱</span><span>Last updated: ${ts}</span>`;
+
+    } catch (err) {
+      document.getElementById('last-updated').innerHTML =
+        `<span>⚠️</span><span>Could not fetch status — retrying...</span>`;
+    }
+  }
+
+  // Initial load + poll
+  fetchStatus();
+  setInterval(fetchStatus, POLL_INTERVAL);
+</script>
+</body>
+</html>

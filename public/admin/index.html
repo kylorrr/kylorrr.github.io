@@ -321,8 +321,9 @@
 
   const STATUS_OPTIONS = [
     { value: 'ud',       label: '✅ Undetected' },
-    { value: 'risky',    label: '⚠️ Risky' },
-    { value: 'detected', label: '❌ Detected' },
+    { value: 'blocked',  label: '🟡 Blocked'    },
+    { value: 'detected', label: '❌ Detected'   },
+    { value: 'updating', label: '🔄 Updating'   },
   ];
 
   // ─────────────────────────────────────────────────────────────────
@@ -422,9 +423,8 @@
       ).join('');
 
       row.innerHTML = `
-        <div>
+        <div class="fw-info">
           <div class="fw-name">${fw.name}</div>
-          <textarea class="fw-games" rows="1" data-index="${i}" placeholder="Games / Anti-cheats">${fw.games}</textarea>
         </div>
         <div class="fw-right">
           <select class="status-select ${fw.status}" data-index="${i}" onchange="updateSelectStyle(this)">
@@ -461,15 +461,13 @@
 
       // Build updated JSON
       const selects  = document.querySelectorAll('.status-select');
-      const textareas= document.querySelectorAll('.fw-games');
       const firmwares = [];
 
-      selects.forEach((sel, i) => {
+      selects.forEach((sel) => {
         const nameEl = sel.closest('.firmware-row').querySelector('.fw-name');
         firmwares.push({
           name:   nameEl.textContent.trim(),
           status: sel.value,
-          games:  textareas[i].value.trim(),
         });
       });
 
@@ -502,7 +500,8 @@
 
       if (!putRes.ok) throw new Error('GitHub API error: ' + putRes.status);
 
-      showToast('✅ Status published! Discord embed updates in ~30 min.', 'success');
+      showToast('✅ Status published! Discord embed updates shortly.', 'success');
+
     } catch (e) {
       showToast('❌ Failed to publish: ' + e.message, 'error');
     } finally {
