@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elyra Status Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #00ff88;
+      --green-dim:  #00cc6a;
+      --green-glow: rgba(0,255,136,0.18);
+      --bg:         #080c10;
+      --surface:    rgba(255,255,255,0.04);
+      --border:     rgba(255,255,255,0.08);
+      --text:       #e8edf2;
+      --muted:      #7a8a9a;
+      --red:        #ff4560;
+      --yellow:     #ffc107;
+      --radius:     14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background blobs ── */
+    .bg-animated { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(90px); opacity: 0.18;
+      animation: blobFloat 12s ease-in-out infinite;
+    }
+    .blob-1 { width: 500px; height: 500px; background: #00ff88; top: -150px; left: -150px; animation-delay: 0s; }
+    .blob-2 { width: 400px; height: 400px; background: #00bfff; bottom: -100px; right: -100px; animation-delay: 4s; }
+    .blob-3 { width: 300px; height: 300px; background: #00ff88; top: 50%; left: 50%; animation-delay: 8s; }
+    @keyframes blobFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(30px,-30px) scale(1.05); }
+      66%      { transform: translate(-20px,20px) scale(0.95); }
+    }
+
+    /* ── Main container ── */
+    .container {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 680px;
+    }
+
+    .header {
+      text-align: center; margin-bottom: 2.5rem;
+    }
+    .header .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--green);
+      background: var(--green-glow); border: 1px solid rgba(0,255,136,0.3);
+      padding: 4px 14px; border-radius: 50px; margin-bottom: 1rem;
+    }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem; font-weight: 900;
+      background: linear-gradient(135deg, #fff 30%, var(--green));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p { color: var(--muted); margin-top: .5rem; font-size: .9rem; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* ── Login screen ── */
+    #login-screen { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    #login-screen p { color: var(--muted); text-align: center; font-size: .9rem; line-height: 1.6; }
+
+    .btn-github {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, var(--green), var(--green-dim));
+      color: #050a08; font-weight: 700; font-size: 1rem;
+      padding: .8rem 2rem; border-radius: 50px; border: none;
+      cursor: pointer; text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 24px var(--green-glow);
+    }
+    .btn-github:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(0,255,136,.35); }
+    .btn-github svg { width: 20px; height: 20px; }
+
+    /* ── Access denied ── */
+    #denied-screen { display: none; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
+    #denied-screen .icon { font-size: 3rem; }
+    #denied-screen h2 { color: var(--red); font-family: 'Outfit', sans-serif; }
+    #denied-screen p { color: var(--muted); }
+
+    /* ── Admin panel ── */
+    #admin-panel { display: none; }
+
+    .user-info {
+      display: flex; align-items: center; gap: .8rem;
+      margin-bottom: 1.8rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .user-info img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--green); }
+    .user-info .name { font-weight: 600; font-size: .95rem; }
+    .user-info .role { font-size: .75rem; color: var(--green); font-weight: 600; letter-spacing: 1px; }
+
+    .section-title {
+      font-size: .7rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+    }
+
+    /* ── Firmware rows ── */
+    .firmware-list { display: flex; flex-direction: column; gap: .8rem; margin-bottom: 2rem; }
+
+    .firmware-row {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: .8rem;
+      align-items: center;
+      transition: border-color .2s;
+    }
+    .firmware-row:hover { border-color: rgba(0,255,136,.25); }
+
+    .fw-name { font-weight: 700; font-size: .95rem; margin-bottom: .2rem; }
+    .fw-games {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 7px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .82rem; padding: .45rem .7rem;
+      resize: none; outline: none; margin-top: .4rem;
+      transition: border-color .2s;
+    }
+    .fw-games:focus { border-color: var(--green); }
+
+    .status-select {
+      appearance: none;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      padding: .5rem .8rem;
+      cursor: pointer;
+      outline: none;
+      text-align: center;
+      transition: border-color .2s, background .2s;
+      min-width: 110px;
+    }
+    .status-select:focus { border-color: var(--green); }
+    .status-select.ud      { color: #00ff88; border-color: rgba(0,255,136,.3); }
+    .status-select.risky   { color: #ffc107; border-color: rgba(255,193,7,.3); }
+    .status-select.detected{ color: #ff4560; border-color: rgba(255,69,96,.3); }
+
+    .fw-right { display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; }
+
+    /* ── Footer note ── */
+    .footer-note-wrap { margin-bottom: 1.5rem; }
+    .footer-note-input {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .85rem; padding: .6rem .9rem; outline: none;
+      transition: border-color .2s;
+    }
+    .footer-note-input:focus { border-color: var(--green); }
+
+    /* ── Save button ── */
+    .btn-save {
+      width: 100%; padding: .9rem;
+      background: linear-gradient(135deg, var(--green), var(--green-dim));
+      border: none; border-radius: 10px;
+      color: #050a08; font-weight: 800; font-size: 1rem;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+    .btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 32px rgba(0,255,136,.4); }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: .8rem 1.5rem;
+      font-size: .88rem; font-weight: 600;
+      backdrop-filter: blur(20px); z-index: 999;
+      transition: transform .35s cubic-bezier(.175,.885,.32,1.275);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(0,255,136,.4); color: var(--green); }
+    .toast.error   { border-color: rgba(255,69,96,.4);  color: var(--red); }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 1rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-screen { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+    #loading-screen p { color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+
+<div class="bg-animated">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">
+      <span>🛡</span> Admin Panel
+    </div>
+    <h1>Status Control</h1>
+    <p>Manage firmware status for the Discord embed. Changes go live within 30 minutes.</p>
+  </div>
+
+  <!-- Loading screen -->
+  <div id="loading-screen" class="card">
+    <div class="spinner"></div>
+    <p id="loading-msg">Initializing...</p>
+  </div>
+
+  <!-- Login screen -->
+  <div id="login-screen" class="card" style="display:none;">
+    <p>Sign in with your GitHub account.<br>Access is restricted to <strong style="color:var(--green)">@kylorrr</strong> only.</p>
+    <button class="btn-github" id="login-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Login with GitHub
+    </button>
+  </div>
+
+  <!-- Access denied -->
+  <div id="denied-screen" class="card">
+    <div class="icon">🚫</div>
+    <h2>Access Denied</h2>
+    <p>This panel is restricted to <strong>@kylorrr</strong> only.<br>You are logged in as <strong id="denied-user"></strong>.</p>
+    <br>
+    <button class="btn-github" onclick="logout()" style="background:var(--red);color:#fff;box-shadow:none;">
+      Logout
+    </button>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="admin-panel" class="card">
+    <div class="user-info">
+      <img id="user-avatar" src="" alt="avatar" />
+      <div>
+        <div class="name" id="user-name">kylorrr</div>
+        <div class="role">✅ AUTHORIZED ADMIN</div>
+      </div>
+    </div>
+
+    <div class="section-title">Firmware Status</div>
+    <div class="firmware-list" id="firmware-list">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="footer-note-wrap">
+      <div class="section-title">Footer Note</div>
+      <input type="text" class="footer-note-input" id="footer-note" placeholder="e.g. Join discord.gg/elyradma to purchase" />
+    </div>
+
+    <button class="btn-save" id="save-btn" onclick="saveStatus()">
+      💾 Save &amp; Publish
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─────────────────────────────────────────────────────────────────
+  //  CONFIG
+  // ─────────────────────────────────────────────────────────────────
+  const GITHUB_CLIENT_ID   = 'YOUR_GITHUB_CLIENT_ID';       // ← replace after creating OAuth App
+  const CLOUDFLARE_WORKER  = 'https://YOUR_WORKER.workers.dev'; // ← replace after deploying worker
+  const ALLOWED_USERNAME   = 'kylorrr';
+  const GITHUB_OWNER       = 'kylorrr';
+  const GITHUB_REPO        = 'kylorrr.github.io';
+  const STATUS_FILE_PATH   = 'status.json';
+  const GITHUB_API         = 'https://api.github.com';
+
+  // ─────────────────────────────────────────────────────────────────
+  //  STATE
+  // ─────────────────────────────────────────────────────────────────
+  let accessToken = null;
+  let currentFileSha = null;
+
+  const STATUS_OPTIONS = [
+    { value: 'ud',       label: '✅ Undetected' },
+    { value: 'risky',    label: '⚠️ Risky' },
+    { value: 'detected', label: '❌ Detected' },
+  ];
+
+  // ─────────────────────────────────────────────────────────────────
+  //  INIT
+  // ─────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+
+    if (token) {
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      sessionStorage.setItem('gh_token', token);
+      accessToken = token;
+      await verifyAndLoad();
+      return;
+    }
+
+    const stored = sessionStorage.getItem('gh_token');
+    if (stored) {
+      accessToken = stored;
+      await verifyAndLoad();
+      return;
+    }
+
+    // No token — show login
+    show('login-screen');
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  //  OAUTH LOGIN
+  // ─────────────────────────────────────────────────────────────────
+  document.getElementById('login-btn').addEventListener('click', () => {
+    const scope    = 'repo';
+    const redirect = encodeURIComponent(`${CLOUDFLARE_WORKER}/callback`);
+    const state    = Math.random().toString(36).slice(2);
+    sessionStorage.setItem('oauth_state', state);
+    window.location.href =
+      `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&state=${state}&redirect_uri=${redirect}`;
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  //  VERIFY USER + LOAD
+  // ─────────────────────────────────────────────────────────────────
+  async function verifyAndLoad() {
+    setLoading('Verifying your GitHub account...');
+    try {
+      const res  = await fetch(`${GITHUB_API}/user`, {
+        headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'ElyraStatusAdmin' }
+      });
+      const user = await res.json();
+
+      if (user.login !== ALLOWED_USERNAME) {
+        document.getElementById('denied-user').textContent = '@' + user.login;
+        show('denied-screen');
+        return;
+      }
+
+      document.getElementById('user-name').textContent   = user.name || user.login;
+      document.getElementById('user-avatar').src         = user.avatar_url;
+
+      await loadStatusData();
+      show('admin-panel');
+    } catch (e) {
+      show('login-screen');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  LOAD status.json FROM GITHUB API
+  // ─────────────────────────────────────────────────────────────────
+  async function loadStatusData() {
+    setLoading('Loading current status...');
+    const res = await fetch(
+      `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${STATUS_FILE_PATH}`,
+      { headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'ElyraStatusAdmin' } }
+    );
+    const data = await res.json();
+    currentFileSha = data.sha;
+    const json = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    renderFirmwares(json);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  RENDER FIRMWARE ROWS
+  // ─────────────────────────────────────────────────────────────────
+  function renderFirmwares(json) {
+    const list = document.getElementById('firmware-list');
+    list.innerHTML = '';
+
+    json.firmwares.forEach((fw, i) => {
+      const row = document.createElement('div');
+      row.className = 'firmware-row';
+
+      const selectHtml = STATUS_OPTIONS.map(o =>
+        `<option value="${o.value}" ${fw.status === o.value ? 'selected' : ''}>${o.label}</option>`
+      ).join('');
+
+      row.innerHTML = `
+        <div>
+          <div class="fw-name">${fw.name}</div>
+          <textarea class="fw-games" rows="1" data-index="${i}" placeholder="Games / Anti-cheats">${fw.games}</textarea>
+        </div>
+        <div class="fw-right">
+          <select class="status-select ${fw.status}" data-index="${i}" onchange="updateSelectStyle(this)">
+            ${selectHtml}
+          </select>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    document.getElementById('footer-note').value = json.footer_note || '';
+  }
+
+  function updateSelectStyle(el) {
+    el.className = 'status-select ' + el.value;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  SAVE & PUBLISH via GitHub API
+  // ─────────────────────────────────────────────────────────────────
+  async function saveStatus() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Publishing...';
+
+    try {
+      // Collect current status.json from GitHub to get SHA
+      const getRes = await fetch(
+        `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${STATUS_FILE_PATH}`,
+        { headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'ElyraStatusAdmin' } }
+      );
+      const existing = await getRes.json();
+      currentFileSha = existing.sha;
+
+      // Build updated JSON
+      const selects  = document.querySelectorAll('.status-select');
+      const textareas= document.querySelectorAll('.fw-games');
+      const firmwares = [];
+
+      selects.forEach((sel, i) => {
+        const nameEl = sel.closest('.firmware-row').querySelector('.fw-name');
+        firmwares.push({
+          name:   nameEl.textContent.trim(),
+          status: sel.value,
+          games:  textareas[i].value.trim(),
+        });
+      });
+
+      const newJson = {
+        updated_at:  new Date().toISOString(),
+        overall:     firmwares.every(f => f.status === 'ud') ? 'operational' :
+                     firmwares.some(f => f.status === 'detected') ? 'incident' : 'degraded',
+        firmwares,
+        footer_note: document.getElementById('footer-note').value.trim(),
+      };
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(newJson, null, 2) + '\n')));
+
+      const putRes = await fetch(
+        `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${STATUS_FILE_PATH}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'ElyraStatusAdmin',
+          },
+          body: JSON.stringify({
+            message: `chore: update firmware status [${new Date().toUTCString()}]`,
+            content,
+            sha: currentFileSha,
+          }),
+        }
+      );
+
+      if (!putRes.ok) throw new Error('GitHub API error: ' + putRes.status);
+
+      showToast('✅ Status published! Discord embed updates in ~30 min.', 'success');
+    } catch (e) {
+      showToast('❌ Failed to publish: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Save & Publish';
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  HELPERS
+  // ─────────────────────────────────────────────────────────────────
+  function show(id) {
+    ['loading-screen','login-screen','denied-screen','admin-panel'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = (s === id) ? (s === 'admin-panel' ? 'block' : 'flex') : 'none';
+    });
+  }
+
+  function setLoading(msg) {
+    document.getElementById('loading-msg').textContent = msg;
+    show('loading-screen');
+  }
+
+  function logout() {
+    sessionStorage.removeItem('gh_token');
+    accessToken = null;
+    show('login-screen');
+  }
+
+  let toastTimer;
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = `toast ${type}`; }, 4000);
+  }
+</script>
+</body>
+</html>
