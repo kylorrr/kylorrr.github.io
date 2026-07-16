@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-07-16T14:13:49.503Z",
-  "overall": "incident",
+  "updated_at": "2026-07-16T14:15:01.830Z",
+  "overall": "degraded",
   "firmwares": [
     {
       "name": "ELYRA SLOT",
-      "status": "detected"
+      "status": "ud"
     },
     {
       "name": "ELYRA PRIVATE",
