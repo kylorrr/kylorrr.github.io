@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-07-16T14:15:01.830Z",
-  "overall": "degraded",
+  "updated_at": "2026-07-16T14:16:03.195Z",
+  "overall": "operational",
   "firmwares": [
     {
       "name": "ELYRA SLOT",
@@ -20,7 +20,7 @@
     },
     {
       "name": "ELYRA VGK",
-      "status": "blocked"
+      "status": "ud"
     }
   ]
 }
