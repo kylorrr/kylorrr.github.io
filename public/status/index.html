@@ -481,15 +481,21 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  function formatTime(isoStr) {
-    try {
-      return new Date(isoStr).toLocaleString('en-GB', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        timeZone: 'UTC', timeZoneName: 'short',
-      });
-    } catch { return isoStr; }
+  function updateClock() {
+    const now = new Date();
+    const timeStr = now.toLocaleString(undefined, {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const el = document.getElementById('last-updated');
+    if (el) {
+      el.innerHTML = `<span>⏱</span><span>Current Time: ${timeStr}</span>`;
+    }
   }
+
+  // Start the clock
+  setInterval(updateClock, 1000);
+  updateClock();
 
   async function fetchStatus() {
     try {
@@ -511,14 +517,8 @@
       const dot  = banner.querySelector('.pulse-dot');
       const ring = banner.querySelector('.pulse-ring');
 
-      // Last updated
-      const ts = data.updated_at ? formatTime(data.updated_at) : '—';
-      document.getElementById('last-updated').innerHTML =
-        `<span>⏱</span><span>Last updated: ${ts}</span>`;
-
     } catch (err) {
-      document.getElementById('last-updated').innerHTML =
-        `<span>⚠️</span><span>Could not fetch status — retrying...</span>`;
+      console.error('Fetch status failed:', err);
     }
   }
 
