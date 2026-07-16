@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-16T14:12:21.747Z",
+  "updated_at": "2026-07-16T14:13:49.503Z",
   "overall": "incident",
   "firmwares": [
     {
@@ -20,7 +20,7 @@
     },
     {
       "name": "ELYRA VGK",
-      "status": "ud"
+      "status": "blocked"
     }
   ]
 }
