@@ -14,8 +14,9 @@
 
     :root {
       --green:      #00ff88;
-      --green-dim:  #00cc6a;
       --green-glow: rgba(0, 255, 136, 0.15);
+      --purple:     #8b5cf6;
+      --purple-glow:rgba(139, 92, 246, 0.15);
       --red:        #ff4560;
       --red-glow:   rgba(255, 69, 96, 0.15);
       --yellow:     #ffc107;
@@ -48,8 +49,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px);
       background-size: 60px 60px;
       pointer-events: none;
       z-index: 0;
@@ -64,8 +65,8 @@
       z-index: 0;
       opacity: 0.25;
     }
-    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #00ff88, transparent); top: -200px; left: -200px; }
-    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #4299e1, transparent); bottom: -100px; right: -100px; }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, var(--purple), transparent); top: -200px; left: -200px; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, var(--blue), transparent); bottom: -100px; right: -100px; }
 
     /* ── LAYOUT ──────────────────────────────────── */
     .wrapper {
@@ -82,14 +83,20 @@
       text-align: center;
     }
 
-    .logo-text {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      color: var(--green);
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
+    .logo-wrapper {
+      margin: 0 auto 0.5rem;
+      width: 120px;
+      height: 100px; /* limits height to crop the tail bottom */
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+
+    .logo-img {
+      width: 120px;
+      height: auto;
+      object-fit: contain;
+      object-position: top; /* align to top so bottom is cropped */
     }
 
     header h1 {
@@ -364,7 +371,10 @@
 <div class="wrapper">
 
   <header>
-    <div class="logo-text">⚡ Elyra DMA</div>
+    <div class="logo-wrapper">
+      <!-- Replace with the actual image path you saved -->
+      <img src="../logo.png" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/120x120/8b5cf6/fff?text=Logo'">
+    </div>
     <h1>System Status</h1>
     <p>Live firmware detection status — updated automatically</p>
   </header>
