@@ -36,3 +36,15 @@ document.querySelectorAll('.project-card').forEach(card => {
   card.style.transition = 'all 0.6s ease-out';
   observer.observe(card);
 });
+
+// Fetch and display view count
+fetch("https://api.counterapi.dev/v1/kylorrr.github.io/index/up")
+  .then(response => response.json())
+  .then(data => {
+    const viewCountElement = document.getElementById("view-count");
+    if (viewCountElement && data.count) {
+      viewCountElement.textContent = data.count.toLocaleString();
+    }
+  })
+  .catch(error => console.error("Error fetching view count:", error));
+
