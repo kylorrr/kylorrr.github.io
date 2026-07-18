@@ -53,12 +53,12 @@ try {
 }
 
 if (shouldFetch) {
-  fetch("https://api.counterapi.dev/v1/kylorrr.github.io/index/up")
+  fetch("https://abacus.jasoncameron.dev/hit/kylorrr.github.io/index")
     .then(response => response.json())
     .then(data => {
       const viewCountElement = document.getElementById("view-count");
-      if (viewCountElement && data.count) {
-        const countStr = data.count.toLocaleString();
+      if (viewCountElement && data.value) {
+        const countStr = data.value.toLocaleString();
         viewCountElement.textContent = countStr;
         try {
           sessionStorage.setItem('viewCount', countStr);
@@ -67,9 +67,10 @@ if (shouldFetch) {
     })
     .catch(error => {
       console.error("Error fetching view count:", error);
-      const viewCountElement = document.getElementById("view-count");
-      if (viewCountElement) {
-        viewCountElement.textContent = "-";
+      // Nascondi il badge se l'API viene bloccata (es. da Brave Shields o AdBlock)
+      const container = document.querySelector(".view-count-container");
+      if (container) {
+        container.style.display = "none";
       }
     });
 }
