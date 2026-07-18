@@ -361,29 +361,7 @@
       .fw-name { font-size: 0.85rem; }
       .status-badge { font-size: 0.72rem; padding: 0.25rem 0.65rem; }
     }
-    .view-count-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 1.5rem;
-      font-size: 0.9rem;
-      color: var(--muted);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 0.5rem 1rem;
-      border-radius: 999px;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-      transition: all 0.3s ease;
-    }
 
-    .view-count-container:hover {
-      background: var(--surface2);
-      color: var(--text);
-      transform: translateY(-2px);
-    }
   </style>
 </head>
 <body>
@@ -454,11 +432,6 @@
   <div class="footer-links">
     <a href="https://discord.gg/elyradma" target="_blank">Join Discord</a>
     <a href="https://kylorrr.github.io">Homepage</a>
-  </div>
-
-  <div class="view-count-container">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-    <span id="view-count">...</span> views
   </div>
 
 </div>
@@ -554,16 +527,6 @@
   fetchStatus();
   setInterval(fetchStatus, POLL_INTERVAL);
 
-  // Fetch and display view count (Global)
-  fetch("https://api.counterapi.dev/v1/kylorrr.github.io/index/up")
-    .then(response => response.json())
-    .then(data => {
-      const viewCountElement = document.getElementById("view-count");
-      if (viewCountElement && data.count) {
-        viewCountElement.textContent = data.count.toLocaleString();
-      }
-    })
-    .catch(error => console.error("Error fetching view count:", error));
 </script>
 </body>
 </html>

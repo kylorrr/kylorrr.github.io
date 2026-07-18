@@ -38,7 +38,16 @@ document.querySelectorAll('.project-card').forEach(card => {
 });
 
 // Fetch and display view count
-fetch("https://api.counterapi.dev/v1/kylorrr.github.io/index/up")
+const hasVisited = sessionStorage.getItem('visited');
+const viewCountUrl = hasVisited 
+  ? "https://api.counterapi.dev/v1/kylorrr.github.io/index/" 
+  : "https://api.counterapi.dev/v1/kylorrr.github.io/index/up";
+
+if (!hasVisited) {
+  sessionStorage.setItem('visited', 'true');
+}
+
+fetch(viewCountUrl)
   .then(response => response.json())
   .then(data => {
     const viewCountElement = document.getElementById("view-count");
