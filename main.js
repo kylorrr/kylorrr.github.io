@@ -38,22 +38,39 @@ document.querySelectorAll('.project-card').forEach(card => {
 });
 
 // Fetch and display view count
-const hasVisited = sessionStorage.getItem('visited');
-const viewCountUrl = hasVisited 
-  ? "https://api.counterapi.dev/v1/kylorrr.github.io/index/" 
-  : "https://api.counterapi.dev/v1/kylorrr.github.io/index/up";
-
-if (!hasVisited) {
-  sessionStorage.setItem('visited', 'true');
+let shouldFetch = true;
+try {
+  const cachedCount = sessionStorage.getItem('viewCount');
+  if (cachedCount) {
+    const viewCountElement = document.getElementById("view-count");
+    if (viewCountElement) {
+      viewCountElement.textContent = cachedCount;
+    }
+    shouldFetch = false; // Already have the count, no need to fetch
+  }
+} catch (e) {
+  // Ignore sessionStorage errors (e.g. private mode, webviews)
 }
 
-fetch(viewCountUrl)
-  .then(response => response.json())
-  .then(data => {
-    const viewCountElement = document.getElementById("view-count");
-    if (viewCountElement && data.count) {
-      viewCountElement.textContent = data.count.toLocaleString();
-    }
-  })
-  .catch(error => console.error("Error fetching view count:", error));
+if (shouldFetch) {
+  fetch("https://api.counterapi.dev/v1/kylorrr.github.io/index/up")
+    .then(response => response.json())
+    .then(data => {
+      const viewCountElement = document.getElementById("view-count");
+      if (viewCountElement && data.count) {
+        const countStr = data.count.toLocaleString();
+        viewCountElement.textContent = countStr;
+        try {
+          sessionStorage.setItem('viewCount', countStr);
+        } catch (e) {} // Ignore
+      }
+    })
+    .catch(error => {
+      console.error("Error fetching view count:", error);
+      const viewCountElement = document.getElementById("view-count");
+      if (viewCountElement) {
+        viewCountElement.textContent = "-";
+      }
+    });
+}
 
