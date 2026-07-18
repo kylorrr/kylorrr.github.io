@@ -527,6 +527,17 @@
   fetchStatus();
   setInterval(fetchStatus, POLL_INTERVAL);
 
+  // Invisible hit counter (so visits to this page increment the overall count)
+  try {
+    if (!sessionStorage.getItem('visited')) {
+      sessionStorage.setItem('visited', 'true');
+      fetch("https://abacus.jasoncameron.dev/hit/kylorrr.github.io/index")
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.value) sessionStorage.setItem('viewCount', data.value.toLocaleString());
+        }).catch(()=>{});
+    }
+  } catch(e) {}
 </script>
 </body>
 </html>

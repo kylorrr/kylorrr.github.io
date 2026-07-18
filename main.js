@@ -38,7 +38,8 @@ document.querySelectorAll('.project-card').forEach(card => {
 });
 
 // Fetch and display view count
-let shouldFetch = true;
+let shouldHit = true;
+let needsData = true;
 try {
   const cachedCount = sessionStorage.getItem('viewCount');
   if (cachedCount) {
@@ -46,14 +47,24 @@ try {
     if (viewCountElement) {
       viewCountElement.textContent = cachedCount;
     }
-    shouldFetch = false; // Already have the count, no need to fetch
+    needsData = false;
+  }
+  
+  if (sessionStorage.getItem('visited')) {
+    shouldHit = false;
+  } else {
+    sessionStorage.setItem('visited', 'true');
   }
 } catch (e) {
   // Ignore sessionStorage errors (e.g. private mode, webviews)
 }
 
-if (shouldFetch) {
-  fetch("https://abacus.jasoncameron.dev/hit/kylorrr.github.io/index")
+if (needsData || shouldHit) {
+  const apiUrl = shouldHit 
+    ? "https://abacus.jasoncameron.dev/hit/kylorrr.github.io/index"
+    : "https://abacus.jasoncameron.dev/get/kylorrr.github.io/index";
+
+  fetch(apiUrl)
     .then(response => response.json())
     .then(data => {
       const viewCountElement = document.getElementById("view-count");
